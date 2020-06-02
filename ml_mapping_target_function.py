@@ -1,7 +1,8 @@
+from collections import Counter
 import numpy as np
 import pandas as pd
-import pickle
-from collections import Counter
+from sklearn import svm, model_selection, neighbors
+from sklearn.ensemble import VotingClassifier, RandomForestClassifier
 
 
 def process_data_for_labels(ticker):
@@ -56,4 +57,20 @@ def extract_feature_sets(ticker):
     return X, y, df
 
 
-extract_feature_sets('XOM')
+def do_ml(ticker):
+    X, y, df = extract_feature_sets(ticker)
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.25)
+    # clf = neighbors.KNeighborsClassifier()
+    clf = VotingClassifier([('lsvc', svm.LinearSVC()),
+                            ('knn', neighbors.KNeighborsClassifier()),
+                            ('rfor', RandomForestClassifier())])
+    clf.fit(X_train, y_train)
+    confidence = clf.score(X_test, y_test)
+    print('Accuracy:', confidence)
+    predictions = clf.predict(X_test)
+    print("Prediction spread:", Counter(predictions))
+
+    return confidence
+
+
+do_ml('BAC')
